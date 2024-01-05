@@ -76,7 +76,6 @@ def ceil(x: float) -> int:
     else:
         return _x + 1
 
-#tính khoảng cách mới trong không gian
 def distance2(x, y):
     """
         Calculate distance ^2 between two point X, Y
