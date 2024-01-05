@@ -276,7 +276,7 @@ def random_mutation(c):
         p = 0
     c[x1] = random.uniform(0, 1)
     c[x2] = p
-    c[x3] = p
+    c[x3] = random.uniform(0, 1)
     c[x4] = random.uniform(0, 1)
 
 
