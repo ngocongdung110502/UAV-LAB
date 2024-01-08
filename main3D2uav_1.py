@@ -13,12 +13,15 @@ t = 0.5
 d = V*t
 X = 20
 Y = 10
-Z = 10 # hệ số Z 
-#tọa độ mới
+Y2 = 5
+Z = 10 
+Z2 = 5
 w_s = [5, 0, 0] 
 w_d = [15, 0, 0]
-q_I = [0, 10, 10]
-q_F = [20, 10, 10]
+q_I1 = [0, 10, 10]
+q_F1 = [20, 10, 10]
+q_I2 = [0, 5, 5]
+q_F2 = [20, 5, 5]
 N = int(T/t)
 N1 = N + 1
 
@@ -39,7 +42,7 @@ a2 = alpha/2
 B = 20
 w_0 = 10**(-3)
 
-xichma = 0.5
+xichma = 0.3
 n_u = 0.5
 P_u = 5  # 7.5 mW
 P_b = 10**(-3)
@@ -98,7 +101,7 @@ P_u_bar = P_u * (1 + ceil(xichma))
 theta = e**(-E) * w_0 / xich_ma_u
 
 
-def fitness(c, log=False):
+def fitness(c, A, B, C, log=False):
     """
         fitness function of individial
         @parameter:
@@ -113,7 +116,7 @@ def fitness(c, log=False):
     z = c[N1+N1:N1*3] # z location
     tau = c[N1*3:]  # tau
     # convert (0, 1) to real
-    l = [[x[i]*X, y[i]*Y, z[i]*Z] for i in range(N1)]  # location
+    l = [[x[i]*A, y[i]*B, z[i]*C] for i in range(N1)]  # location
     e_fly = 0  # total fly energy
     e_h = 0  # total harvested energy
     r_u = 0  # total rate from source -> uav
@@ -155,7 +158,7 @@ def fitness(c, log=False):
 
     if log:
         print(
-            f"E_fly= {e_fly}, E_H= {e_h}, R_d= {r_d}, R_u + xichma*S = {r_u + xichma * S}")
+            f"E_fly1= {e_fly}, E_H1= {e_h}, R_d1= {r_d}, R_u1 + xichma*S = {r_u + xichma * S}")
     # constraint 22e
     for i in range(0, N1-1):
         if distance(l[i], l[i+1]) > d:
@@ -174,7 +177,8 @@ def fitness(c, log=False):
     return r_d
 
 
-def init_one_child():
+
+def init_one_child(A, B, C):
     """
         init one individial
         @return:
@@ -189,12 +193,12 @@ def init_one_child():
     e_h = 0  # total harvested energy
     for _ in range(1, N1-1):
         i, j, e = x[-1], y[-1], z[-1]  # x, y, z location at time slot i - 1
-        i, j, e = i * X, j * Y, e * Z # scale from (0, 1) to real
+        i, j, e = i * A, j * B, e * C # scale from (0, 1) to real
         _i = random.uniform(0, 1)  # random x location at time slot i
         _j = random.uniform(0, 1)  # random y location at time slot i
-        _e = random.uniform(0.1, 1)  # random z location at time slot i
+        _e = random.uniform(0, 1)  # random z location at time slot i
         _tau = random.uniform(0, 1)  # random tau at time slot i
-        dis = distance([i, j, e], [_i * X, _j * Y, _e * Z])  # distance from Q_i-1 to Q_i
+        dis = distance([i, j, e], [_i * A, _j * B, _e * C])  # distance from Q_i-1 to Q_i
         e_fly_i = P_0 * (t + k_1 * dis**2) + P_1 * sqrt(sqrt(t**4 + k_2**2 * dis**4) -
                                                         k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + P_u)
         e_h_i = micro * (1 - _tau) * t * w_0 * \
@@ -206,9 +210,9 @@ def init_one_child():
                 return None
             _i = random.uniform(0, 1)
             _j = random.uniform(0, 1)
-            _e = random.uniform(0.1, 1)
+            _e = random.uniform(0, 1)
             _tau = random.uniform(0, 1)
-            dis = distance([i, j, e], [_i * X, _j * Y, _e * Z])
+            dis = distance([i, j, e], [_i * A, _j * B, _e * C])
             e_fly_i = P_0 * (t + k_1 * dis**2) + P_1 * sqrt(sqrt(t**4 + k_2**2 * dis**4) -
                                                             k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + P_u)
             e_h_i = micro * (1 - _tau) * t * w_0 * \
@@ -223,7 +227,7 @@ def init_one_child():
     y.append(1)
     z.append(1)
     tau.append(random.uniform(0, 1))
-    v = fitness(x + y + z + tau)
+    v = fitness(x + y + z + tau, A, B, C)
     if v > 0:
         return x + y + z + tau
     else:
@@ -258,7 +262,7 @@ def laplace_cross_over(_f, _m):
 X1 = list(range(1, N))  # [1 -> 39]
 X2 = list(range(N+2, 2*N+1))  # [1-39]
 X3 = list(range(2*N+3, 3*N+2)) # [1-39]
-X4 = list(range(3*N+3, 4*N + 3))  # [0-40]
+X4 = list(range(3*N+3, 4*N + 4))  # [0-40]
 
 def random_mutation(c):
     """
@@ -275,11 +279,11 @@ def random_mutation(c):
         p = 0
     c[x1] = random.uniform(0, 1)
     c[x2] = p
-    c[x3] = random.uniform(0.1, 1)
+    c[x3] = random.uniform(0, 1)
     c[x4] = random.uniform(0, 1)
 
 
-def choose(population):
+def choose(population, A, B, C):
     """
         Random 2 children of population a, b
         choose a if fitness of a better than b
@@ -294,14 +298,14 @@ def choose(population):
     res = []
     for i in range(len(x)//2):
         a, b = x[i], x[len(x)//2 + i]
-        if fitness(a) >= fitness(b):
+        if fitness(a, A, B, C) >= fitness(b, A, B, C):
             res.append(a)
         else:
             res.append(b)
     return res
 
 
-def init_population(size):
+def init_population(size, A, B, C):
     """
         init population
         @parameter:
@@ -310,30 +314,39 @@ def init_population(size):
     """
     a = []
     for i in range(size):
-        o = init_one_child()
+        o = init_one_child(A, B, C)
         while o is None:
             print("Init population ...", i)
-            o = init_one_child()
+            o = init_one_child(A, B, C)
         a.append(o)
     return a
 
 
 size = 100
-nums_generation = 20000
+nums_generation = 10000
 mutation_rate = 0.1
 
-population = init_population(size)
+population1 = init_population(size, X, Y, Z)
+population2 = init_population(size, X, Y2, Z2)
 
 
 plt.ion()
 figure = plt.figure()
 ax = figure.add_subplot(111, projection = '3d')
 
-x1 = np.array(population[0][:N1]) * X
-y1 = np.array(population[0][N1:N1+N1]) * Y
-z1 = np.array(population[0][2*N1:3*N1]) * Z 
+x1 = np.array(population1[0][:N1]) * X
+y1 = np.array(population1[0][N1:N1+N1]) * Y
+z1 = np.array(population1[0][2*N1:3*N1]) * Z 
 
-line,  = ax.plot(x1, y1, z1, marker="o", linewidth=2, markersize=6)
+line1,  = ax.plot(x1, y1, z1, marker="o", linewidth=2, markersize=6, label = 'UAV_1')
+
+x2 = np.array(population2[0][:N1]) * X
+y2 = np.array(population2[0][N1:N1+N1]) * Y2
+z2 = np.array(population2[0][2*N1:3*N1]) * Z2
+
+line2,  = ax.plot(x2, y2, z2, marker="o", linewidth=2, markersize=6, label = 'UAV_2')
+
+ax.legend()
 
 ax.scatter(w_s[0], w_s[1], w_s[2], color="red", s = 50)
 ax.text(w_s[0], w_s[1], w_s[2], "Source", color="blue")
@@ -341,19 +354,26 @@ ax.text(w_s[0], w_s[1], w_s[2], "Source", color="blue")
 ax.scatter(w_d[0], w_d[1], w_d[2], color="blue", s=50)
 ax.text(w_d[0], w_d[1], w_d[2], "Destination", color="red")
 
-ax.scatter(q_I[0], q_I[1], q_I[2], color="green", s=50)
-ax.text(q_I[0], q_I[1], q_I[2], "Start", color="green")
+ax.scatter(q_I1[0], q_I1[1], q_I1[2], color="green", s=50)
+ax.text(q_I1[0], q_I1[1], q_I1[2], "Start1", color="green")
 
-ax.scatter(q_F[0], q_F[1], q_F[2], color="yellow", s=50) 
-ax.text(q_F[0], q_F[1], q_F[2], "Finish", color="green")
+ax.scatter(q_F1[0], q_F1[1], q_F1[2], color="yellow", s=50) 
+ax.text(q_F1[0], q_F1[1], q_F1[2], "Finish1", color="green")
+
+ax.scatter(q_I2[0], q_I2[1], q_I2[2], color="green", s=50)
+ax.text(q_I2[0], q_I2[1], q_I2[2], "Start2", color="green")
+
+ax.scatter(q_F2[0], q_F2[1], q_F2[2], color="yellow", s=50) 
+ax.text(q_F2[0], q_F2[1], q_F2[2], "Finish1", color="green")
 
 
 g = []
 
-population.sort(key=fitness, reverse=True)
+population1.sort(key=fitness(X, Y, Z), reverse=True)
+population2.sort(key=fitness(X, Y2, Z2), reverse=True)
 for i in range(nums_generation):
     # print(f"{i}")
-    best = fitness(population[0])
+    best = fitness(population1[0], X, Y, Z) + fitness(population2[0], X, Y2, Z2)
     print(f"{i} Best: {best}")
     if i % 100 == 0:
         if best < S:
@@ -361,35 +381,43 @@ for i in range(nums_generation):
         else:
             g.append(best)
 
-    x1 = np.array(population[0][:N1]) * X
-    y1 = np.array(population[0][N1:N1+N1]) * Y
-    z1 = np.array(population[0][N1+N1:N1*3]) * Z
-    line.set_xdata(x1)
-    line.set_ydata(y1)
-    line.set_3d_properties(z1)
+    x1 = np.array(population1[0][:N1]) * X
+    y1 = np.array(population1[0][N1:N1+N1]) * Y
+    z1 = np.array(population1[0][N1+N1:N1*3]) * Z
+    line1.set_xdata(x1)
+    line1.set_ydata(y1)
+    line1.set_3d_properties(z1)
+
+    x2 = np.array(population2[0][:N1]) * X
+    y2 = np.array(population2[0][N1:N1+N1]) * Y2
+    z2 = np.array(population2[0][N1+N1:N1*3]) * Z2
+    line2.set_xdata(x2)
+    line2.set_ydata(y2)
+    line2.set_3d_properties(z2)
+
 
     figure.canvas.draw()
     figure.canvas.flush_events()
 
     # start cross over
-    next = []
+    next1 = []
     for i in range(size//2):
-        father, mother = random.sample(population, 2)
+        father, mother = random.sample(population1, 2)
         x, y = linear_cross_over(father, mother)
-        next.append(x)
-        next.append(y)
+        next1.append(x)
+        next1.append(y)
 
     # mutation
-    muta = random.sample(next, int(mutation_rate*size))
+    muta = random.sample(next1, int(mutation_rate*size))
     for i in muta:
         random_mutation(i)
 
     # group population
-    population = population + next
+    population1 = population1 + next1
 
     # sort by fitness function
     # population = choose(population)
-    population.sort(key=fitness, reverse=True)
+    population1.sort(key=fitness, reverse=True)
 
     # population = population[:size] # choose 50% best
 
@@ -398,38 +426,82 @@ for i in range(nums_generation):
     t2 = int(size * 2 / 5)
     t3 = int(size / 5)
     t1 = size - t2 - t3
-    population = population[:t1] + \
-        population[_size//3:_size//3+t2] + population[-t3:]
+    population1 = population1[:t1] + \
+        population1[_size//3:_size//3+t2] + population1[-t3:]
+    
+    # start cross over
+    next2 = []
+    for i in range(size//2):
+        father, mother = random.sample(population2, 2)
+        x, y = linear_cross_over(father, mother)
+        next2.append(x)
+        next2.append(y)
+
+    # mutation
+    muta = random.sample(next2, int(mutation_rate*size))
+    for i in muta:
+        random_mutation(i)
+
+    # group population
+    population2 = population2 + next2
+
+    # sort by fitness function
+    # population = choose(population)
+    population2.sort(key=fitness, reverse=True)
+
+    # population = population[:size] # choose 50% best
+
+    # choose 40% best, 30% medium, 30% bad
+    _size = 2 * size
+    t2 = int(size * 2 / 5)
+    t3 = int(size / 5)
+    t1 = size - t2 - t3
+    population2 = population2[:t1] + \
+        population2[_size//3:_size//3+t2] + population2[-t3:]
+
 
 
 #print result
-population.sort(key=fitness, reverse=True)
+population1.sort(key=fitness(X, Y, Z), reverse=True)
+population2.sort(key=fitness(X, Y2, Z2), reverse=True)
 plt.ioff()
 plt.close()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-x1 = np.array(population[0][:N1]) * X
-y1 = np.array(population[0][N1:N1+N1]) * Y
-z1 = np.array(population[0][2*N1:3*N1]) * Z
+x1 = np.array(population1[0][:N1]) * X
+y1 = np.array(population1[0][N1:N1+N1]) * Y
+z1 = np.array(population1[0][2*N1:3*N1]) * Z
+ax.plot(x1, y1, z1, marker="o", linewidth=2, markersize=6, label = "UAV_1")
 
-ax.plot(x1, y1, z1, marker="o", linewidth=2, markersize=6)
+x2 = np.array(population2[0][:N1]) * X
+y2 = np.array(population2[0][N1:N1+N1]) * Y2
+z2 = np.array(population2[0][2*N1:3*N1]) * Z2
+ax.plot(x2, y2, z2, marker="o", linewidth=2, markersize=6, label = "UAV_2")
+
 
 ax.scatter(w_s[0], w_s[1], w_s[2], color="red", s=50)  
 ax.text(w_s[0], w_s[1], w_s[2], "Source", color="blue")
 
 ax.scatter(w_d[0], w_d[1], w_d[2], color="blue", s=50) 
 
-ax.scatter(q_I[0], q_I[1], q_I[2], color="green", s=50)  
-ax.text(q_I[0], q_I[1], q_I[2], "Start", color="green")
+ax.scatter(q_I1[0], q_I1[1], q_I1[2], color="green", s=50)
+ax.text(q_I1[0], q_I1[1], q_I1[2], "Start1", color="green")
 
-ax.scatter(q_F[0], q_F[1], q_F[2], color="yellow", s=50) 
-ax.text(q_F[0], q_F[1], q_F[2], "Finish", color="green")
+ax.scatter(q_F1[0], q_F1[1], q_F1[2], color="yellow", s=50) 
+ax.text(q_F1[0], q_F1[1], q_F1[2], "Finish1", color="green")
+
+ax.scatter(q_I2[0], q_I2[1], q_I2[2], color="green", s=50)
+ax.text(q_I2[0], q_I2[1], q_I2[2], "Start2", color="green")
+
+ax.scatter(q_F2[0], q_F2[1], q_F2[2], color="yellow", s=50) 
+ax.text(q_F2[0], q_F2[1], q_F2[2], "Finish1", color="green")
 
 plt.show()
 
 with open("result.txt", "a+") as f:
-    f.write(json.dumps(population[0]))
+    f.write(json.dumps(population1[0]))
+    f.write(json.dumps(population2[0]))
 with open("xxxx.txt", "a+") as f:
     f.write(json.dumps(g) + "\n")
-print("Result:", fitness(population[0], log=True))
+print("Result:", fitness(population1[0], X, Y, Z, log=True) + fitness(population2[0], X, Y2, Z2, log = True))

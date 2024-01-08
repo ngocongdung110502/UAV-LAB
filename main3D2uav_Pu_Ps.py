@@ -13,15 +13,15 @@ t = 0.5
 d = V*t
 X = 20
 Y = 10
-Y2 = 5
+Y2 = 10
 Z = 10 
 Z2 = 5
 w_s = [5, 0, 0] 
 w_d = [15, 0, 0]
 q_I1 = [0, 10, 10]
 q_F1 = [20, 10, 10]
-q_I2 = [0, 5, 5]
-q_F2 = [20, 5, 5]
+q_I2 = [0, 10, 5]
+q_F2 = [20, 10, 5]
 N = int(T/t)
 N1 = N + 1
 
@@ -44,9 +44,9 @@ w_0 = 10**(-3)
 
 xichma = 0.3
 n_u = 0.5
-P_u = 5  # 7.5 mW
+P_u = 4  # 7.5 mW
 P_b = 10**(-3)
-P_s = 10**(1.6)  # 16dBm
+P_s = 41  # 16dBm
 xich_ma_u = 10**(-6)
 nguy = 0.5
 P_wpt = 1*10**7
@@ -97,7 +97,7 @@ def distance(x, y):
     return sqrt(distance2(x, y))
 
 
-P_u_bar = P_u * (1 + ceil(xichma))
+# P_u_bar = P_u * (1 + ceil(xichma))
 theta = e**(-E) * w_0 / xich_ma_u
 
 
@@ -114,7 +114,9 @@ def fitness1(c, log=False):
     x = c[:N1]  # x location
     y = c[N1:N1+N1]  # y location
     z = c[N1+N1:N1*3] # z location
-    tau = c[N1*3:]  # tau
+    tau = c[N1*3:N1*4]  # tau
+    u = c[N1*4:N1*5] # Pu
+    s = c[N1*5:N1*6] # Ps
     # convert (0, 1) to real
     l = [[x[i]*X, y[i]*Y, z[i]*Z] for i in range(N1)]  # location
     e_fly = 0  # total fly energy
@@ -122,20 +124,21 @@ def fitness1(c, log=False):
     r_u = 0  # total rate from source -> uav
     r_d = 0  # total rate from uav -> destination
     for i in range(0, N):
+        P_u_bar = u[i]*P_u * (1 + ceil(xichma))
         d_su2 = distance2(l[i], w_s)  # distance^2 from uav to source
         d_du2 = distance2(l[i], w_d)  # distance^2 from uav to destination
 
         # R_u at time slot i
         # formula (20)
-        r_u_i = log2(1 + (theta * P_s) / (d_su2**a2))
+        r_u_i = log2(1 + (theta * s[i]*P_s) / (d_su2**a2))
         r_u = r_u + 1 * tau[i] * t * r_u_i
 
         _o = ( d_su2**a2 * d_du2**a2)
         # formula (21)
-        r_d_i1 = log2(1+(theta*(n_u*w_0*P_s+P_u_bar* d_su2**a2)) / _o)
+        r_d_i1 = log2(1+(theta*(n_u*w_0*s[i]*P_s+P_u_bar* d_su2**a2)) / _o)
 
         # Data transmission rate from UAV to d if it cached a part of f file
-        r_d_i2 = log2(1 + theta * P_u / d_du2**a2)
+        r_d_i2 = log2(1 + theta * u[i]*P_u / d_du2**a2)
         # R_d at time slot i
         r_d_i = r_d_i1
         # r_d_i = r_d_i1 + r_d_i2
@@ -148,7 +151,7 @@ def fitness1(c, log=False):
         # e_fly at time slot i
         # formula (8)
         e_fly_i = P_0 * (t + k_1 * dis**2) + P_1 * sqrt(sqrt(t**4 + k_2**2 * dis**4) -
-                                                        k_2 * dis**2) + k_3 * dis**3 / t**2 + tau[i] * t * (P_b + P_u)
+                                                        k_2 * dis**2) + k_3 * dis**3 / t**2 + tau[i] * t * (P_b + u[i]*P_u)
         e_fly = e_fly + e_fly_i
 
         # e_h at time slot i
@@ -189,7 +192,9 @@ def fitness2(c, log=False):
     x = c[:N1]  # x location
     y = c[N1:N1+N1]  # y location
     z = c[N1+N1:N1*3] # z location
-    tau = c[N1*3:]  # tau
+    tau = c[N1*3:N1*4]  # tau
+    u = c[N1*4:N1*5] # Pu
+    s = c[N1*5:N1*6] # Ps
     # convert (0, 1) to real
     l = [[x[i]*X, y[i]*Y2, z[i]*Z2] for i in range(N1)]  # location
     e_fly = 0  # total fly energy
@@ -197,20 +202,21 @@ def fitness2(c, log=False):
     r_u = 0  # total rate from source -> uav
     r_d = 0  # total rate from uav -> destination
     for i in range(0, N):
+        P_u_bar = u[i]*P_u * (1 + ceil(xichma))
         d_su2 = distance2(l[i], w_s)  # distance^2 from uav to source
         d_du2 = distance2(l[i], w_d)  # distance^2 from uav to destination
 
         # R_u at time slot i
         # formula (20)
-        r_u_i = log2(1 + (theta * P_s) / (d_su2**a2))
+        r_u_i = log2(1 + (theta * s[i]*P_s) / (d_su2**a2))
         r_u = r_u + 1 * tau[i] * t * r_u_i
 
         _o = ( d_su2**a2 * d_du2**a2)
         # formula (21)
-        r_d_i1 = log2(1+(theta*(n_u*w_0*P_s+P_u_bar* d_su2**a2)) / _o)
+        r_d_i1 = log2(1+(theta*(n_u*w_0*s[i]*P_s+P_u_bar* d_su2**a2)) / _o)
 
         # Data transmission rate from UAV to d if it cached a part of f file
-        r_d_i2 = log2(1 + theta * P_u / d_du2**a2)
+        r_d_i2 = log2(1 + theta * u[i]*P_u / d_du2**a2)
         # R_d at time slot i
         r_d_i = r_d_i1
         # r_d_i = r_d_i1 + r_d_i2
@@ -223,7 +229,7 @@ def fitness2(c, log=False):
         # e_fly at time slot i
         # formula (8)
         e_fly_i = P_0 * (t + k_1 * dis**2) + P_1 * sqrt(sqrt(t**4 + k_2**2 * dis**4) -
-                                                        k_2 * dis**2) + k_3 * dis**3 / t**2 + tau[i] * t * (P_b + P_u)
+                                                        k_2 * dis**2) + k_3 * dis**3 / t**2 + tau[i] * t * (P_b + u[i]*P_u)
         e_fly = e_fly + e_fly_i
 
         # e_h at time slot i
@@ -259,6 +265,8 @@ def init_one_child1():
             * None: if not pass fitness function
     """
     tau = [random.uniform(0, 1)]  # tau
+    u = [random.uniform(0, 1)]  # Pu
+    s = [random.uniform(0, 1)]  # Ps
     x = [0]  # x location
     y = [1]  # y location
     z = [1]  # z location
@@ -271,9 +279,11 @@ def init_one_child1():
         _j = random.uniform(0, 1)  # random y location at time slot i
         _e = random.uniform(0, 1)  # random z location at time slot i
         _tau = random.uniform(0, 1)  # random tau at time slot i
+        _u = random.uniform(0, 1)  # random Pu at time slot i
+        _s = random.uniform(0, 1)  # random Ps at time slot i
         dis = distance([i, j, e], [_i * X, _j * Y, _e * Z])  # distance from Q_i-1 to Q_i
         e_fly_i = P_0 * (t + k_1 * dis**2) + P_1 * sqrt(sqrt(t**4 + k_2**2 * dis**4) -
-                                                        k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + P_u)
+                                                        k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + _u*P_u)
         e_h_i = micro * (1 - _tau) * t * w_0 * \
             P_wpt / (distance([i, j, e], w_s))**a2
         k = 0  # checkpoint when not found next satisfied point
@@ -285,24 +295,30 @@ def init_one_child1():
             _j = random.uniform(0, 1)
             _e = random.uniform(0, 1)
             _tau = random.uniform(0, 1)
+            _u = random.uniform(0, 1)  
+            _s = random.uniform(0, 1)
             dis = distance([i, j, e], [_i * X, _j * Y, _e * Z])
             e_fly_i = P_0 * (t + k_1 * dis**2) + P_1 * sqrt(sqrt(t**4 + k_2**2 * dis**4) -
-                                                            k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + P_u)
+                                                            k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + _u*P_u)
             e_h_i = micro * (1 - _tau) * t * w_0 * \
                 P_wpt / (distance([i, j, e], w_s))**a2
         x.append(_i)
         y.append(_j)
         z.append(_e)
         tau.append(_tau)
+        u.append(_u)
+        s.append(_s)
         e_fly = e_fly + e_fly_i
         e_h = e_h + e_h_i
     x.append(1)
     y.append(1)
     z.append(1)
     tau.append(random.uniform(0, 1))
-    v = fitness1(x + y + z + tau)
+    s.append(random.uniform(0, 1))
+    u.append(random.uniform(0, 1))
+    v = fitness1(x + y + z + tau + u + s)
     if v > 0:
-        return x + y + z + tau
+        return x + y + z + tau + u + s
     else:
         return None
 
@@ -314,6 +330,8 @@ def init_one_child2():
             * None: if not pass fitness function
     """
     tau = [random.uniform(0, 1)]  # tau
+    u = [random.uniform(0, 1)]  # Pu
+    s = [random.uniform(0, 1)]  # Ps
     x = [0]  # x location
     y = [1]  # y location
     z = [1]  # z location
@@ -324,11 +342,13 @@ def init_one_child2():
         i, j, e = i * X, j * Y2, e * Z2 # scale from (0, 1) to real
         _i = random.uniform(0, 1)  # random x location at time slot i
         _j = random.uniform(0, 1)  # random y location at time slot i
-        _e = random.uniform(0, 1)  # random z location at time slot i
+        _e = random.uniform(0.2, 1)  # random z location at time slot i
         _tau = random.uniform(0, 1)  # random tau at time slot i
+        _u = random.uniform(0, 1)  # random Pu at time slot i
+        _s = random.uniform(0, 1)  # random Ps at time slot i
         dis = distance([i, j, e], [_i * X, _j * Y2, _e * Z2])  # distance from Q_i-1 to Q_i
         e_fly_i = P_0 * (t + k_1 * dis**2) + P_1 * sqrt(sqrt(t**4 + k_2**2 * dis**4) -
-                                                        k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + P_u)
+                                                        k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + _u*P_u)
         e_h_i = micro * (1 - _tau) * t * w_0 * \
             P_wpt / (distance([i, j, e], w_s))**a2
         k = 0  # checkpoint when not found next satisfied point
@@ -338,8 +358,10 @@ def init_one_child2():
                 return None
             _i = random.uniform(0, 1)
             _j = random.uniform(0, 1)
-            _e = random.uniform(0, 1)
+            _e = random.uniform(0.2, 1)
             _tau = random.uniform(0, 1)
+            _u = random.uniform(0, 1)  
+            _s = random.uniform(0, 1)
             dis = distance([i, j, e], [_i * X, _j * Y2, _e * Z2])
             e_fly_i = P_0 * (t + k_1 * dis**2) + P_1 * sqrt(sqrt(t**4 + k_2**2 * dis**4) -
                                                             k_2 * dis**2) + k_3 * dis**3 / t**2 + _tau * t * (P_b + P_u)
@@ -348,16 +370,20 @@ def init_one_child2():
         x.append(_i)
         y.append(_j)
         z.append(_e)
+        u.append(_u)
+        s.append(_s)
         tau.append(_tau)
         e_fly = e_fly + e_fly_i
         e_h = e_h + e_h_i
     x.append(1)
     y.append(1)
     z.append(1)
+    s.append(random.uniform(0, 1))
+    u.append(random.uniform(0, 1))
     tau.append(random.uniform(0, 1))
-    v = fitness2(x + y + z + tau)
+    v = fitness2(x + y + z + tau + u + s)
     if v > 0:
-        return x + y + z + tau
+        return x + y + z + tau + u + s
     else:
         return None
 
@@ -385,11 +411,44 @@ def laplace_cross_over(_f, _m):
         c2[i] = _m[i] + b * abs(_f[i] - _m[i])
     return c1, c2
 
+def binary_cross_over(_f, _m):
+    """
+        Cross over from parents
+        @parameter:
+            _f: father
+            _m: mother
+        @return: 2 children from parents
+    """
+    c1, c2 = _f.copy(), _m.copy()
+    n = 2
+    u = random.uniform(0, 1)
+    if u <= 0.5:
+        b = (2*u) ** (1 / (n + 1))
+    else:
+        b = (1 / 2 / (1 - u)) ** (1 / (n + 1))
+    for i in range(3*N1):
+        x1 = 0.5 * ((1 + b) * _f[i] + (1 - b) * _m[i])
+        x2 = 0.5 * ((1 - b) * _f[i] + (1 + b) * _m[i])
+        if i >= 2*N1:
+            if x1 > 1:
+                x1 = 1
+            if x1 < 0:
+                x1 = 0
+            if x2 > 1:
+                x2 = 1
+            if x2 < 0:
+                x2 = 0
+        c1[i] = x1
+        c2[i] = x2
+    return c1, c2
+
 
 X1 = list(range(1, N))  # [1 -> 39]
 X2 = list(range(N+2, 2*N+1))  # [1-39]
 X3 = list(range(2*N+3, 3*N+2)) # [1-39]
-X4 = list(range(3*N+3, 4*N + 3))  # [0-40]
+X4 = list(range(3*N+3, 4*N+3))  # [0-40]
+X5 = list(range(4*N+3, 5*N+3))  # [0-40]
+X6 = list(range(5*N+3, 6*N+3))  # [0-40]
 
 def random_mutation(c):
     """
@@ -401,13 +460,17 @@ def random_mutation(c):
     x2 = random.choice(X2)
     x3 = random.choice(X3)
     x4 = random.choice(X4)
+    x5 = random.choice(X5)
+    x6 = random.choice(X6)
     p = random.uniform(-1, 1)
     if p < 0:
         p = 0
     c[x1] = random.uniform(0, 1)
-    c[x2] = random.uniform(0, 1)
-    c[x3] = p
+    c[x2] = p
+    c[x3] = random.uniform(0, 1)
     c[x4] = random.uniform(0, 1)
+    c[x5] = random.uniform(0, 1)
+    c[x6] = random.uniform(0, 1)
 
 
 def choose1(population):
@@ -486,7 +549,7 @@ def init_population2(size):
 
 
 size = 100
-nums_generation = 5000
+nums_generation = 10000
 mutation_rate = 0.1
 
 population1 = init_population1(size)

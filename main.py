@@ -38,9 +38,10 @@ w_0 = 10**(-3)
 
 xichma = 0.5
 n_u = 0.5
-P_u = 5  # 7.5 mW
+P_u = 5 # 7.5 mW
 P_b = 10**(-3)
 P_s = 10**(1.6)  # 16dBm
+#P_s = 41
 xich_ma_u = 10**(-6)
 nguy = 0.5
 P_wpt = 1*10**7
@@ -295,9 +296,9 @@ def laplace_cross_over(_f, _m):
     return c1, c2
 
 
-X1 = list(range(1, N1-1))  # [1 -> 39]
+X1 = list(range(1, N))  # [1 -> 39]
 X2 = list(range(N+2, 2*N+1))  # [1-39]
-X3 = list(range(2*N+2, 3*N + 3))  # [0-40]
+X3 = list(range(2*N+2, 3*N + 2))  # [0-40] note
 
 
 def random_mutation(c):
@@ -312,8 +313,8 @@ def random_mutation(c):
     p = random.uniform(-1, 1)
     if p < 0:
         p = 0
-    c[x1] = p
-    c[x2] = random.uniform(0, 1)
+    c[x1] = random.uniform(0, 1)
+    c[x2] = p
     c[x3] = random.uniform(0, 1)
 
 
@@ -401,7 +402,7 @@ for i in range(nums_generation):
     next = []
     for i in range(size//2):
         father, mother = random.sample(population, 2)
-        x, y = linear_cross_over(father, mother)
+        x, y = binary_cross_over(father, mother)
         next.append(x)
         next.append(y)
 

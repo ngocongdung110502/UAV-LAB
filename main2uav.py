@@ -472,7 +472,7 @@ def init_population2(size):
     return a
 
 size = 100
-nums_generation = 1000
+nums_generation = 10000
 mutation_rate = 0.1
 
 population1 = init_population1(size)
